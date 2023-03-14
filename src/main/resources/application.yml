@@ -1,0 +1,22 @@
+
+server:
+  #tomcat最大线程数，默认为200
+  max-threads: 800
+  # Tomcat启动初始化的线程数，默认值25
+  min-spare-threads: 30
+  #服务器的HTTP端口，默认为8080
+  port: 8000
+  servlet:
+    #应用的访问路径
+    context-path: /url-shortcut
+  tomcat:
+    #tomcat的URI编码
+    uri-encoding: UTF-8
+
+spring: 
+  neo4j:
+    uri: bolt://192.168.2.17:7687
+    username: neo4j
+    password: neo4j123456
+
+

@@ -82,9 +82,15 @@ Then type the Cypher command. The final command exits Cypher shell using `:exit`
 
 
 
-# Getting started with Neo4j Browser
+# Getting started with Neo4j Browser - Cypher
 
-## Manager Databases
+## Getting started
+
+Once you have an AuraDB database, you can use the `:play cypher` command inside of Neo4j Browser to get started.
+
+![play cypher command](https://dist.neo4j.com/wp-content/uploads/play-cypher-command.png)
+
+## Databases
 
 + Show the status of all databases
 
@@ -123,11 +129,59 @@ Then type the Cypher command. The final command exits Cypher shell using `:exit`
 + Start a database
 + Drop or remove a database
 
+## Node
 
+### Create a node 
 
+```cypher
+CREATE (ee:Person { name: "Emil", from: "Sweden", klout: 99 })
+```
 
+- `CREATE` clause to create data
+- `()` parenthesis to indicate a node
+- `ee:Person` a <u>variable</u> 'ee' and <u>label</u> 'Person' for the new node
+- `{}` brackets to add properties to the node
 
+### Finding nodes
 
+```cypher
+MATCH (ee:Person) WHERE ee.name = "Emil" RETURN ee;
+```
+
+- `MATCH` clause to specify a pattern of nodes and relationships
+- `(ee:Person)` a single node pattern with label 'Person' which will assign matches to the variable 'ee'
+- `WHERE` clause to constrain the results
+- `ee.name = "Emil"` compares name property to the value "Emil"
+- `RETURN` clause used to request particular results
+
+### Create more Nodes and relationships
+
+```cypher
+MATCH (ee:Person) WHERE ee.name = "Emil"
+CREATE (js:Person { name: "Johan", from: "Sweden", learn: "surfing" }),
+(ir:Person { name: "Ian", from: "England", title: "author" }),
+(rvb:Person { name: "Rik", from: "Belgium", pet: "Orval" }),
+(ally:Person { name: "Allison", from: "California", hobby: "surfing" }),
+(ee)-[:KNOWS {since: 2001}]->(js),(ee)-[:KNOWS {rating: 5}]->(ir),
+(js)-[:KNOWS]->(ir),(js)-[:KNOWS]->(rvb),
+(ir)-[:KNOWS]->(js),(ir)-[:KNOWS]->(ally),
+(rvb)-[:KNOWS]->(ally)
+```
+
++ `[]`: relationship
++ `:KNOWS`: relationship-lable
++ :KNOWS `{rating: 5}`:relationship-lable's property
+
+### Pattern matching
+
+```cypher
+MATCH (js:Person)-[:KNOWS]-()-[:KNOWS]-(surfer)
+WHERE js.name = "Johan" AND surfer.hobby = "surfing"
+RETURN DISTINCT surfer
+```
+
++ `surfer`: a common node
++ `()`: result
 
 
 
@@ -156,7 +210,39 @@ spring:
     password: secret
 ```
 
+## Create your domain
 
+### Example Node-Entity
+
+```java
+// `@Node`: is used to mark this class as a managed entity. It also is used to configure the Neo4j label. The label defaults to the name of the class, if you’re just using plain `@Node`.
+@Node("Movie") 
+public class MovieEntity {
+
+  // `@Id`: Each entity has to have an id. The movie class shown here uses the attribute `title` as a unique business key. If you don’t have such a unique key, you can use the combination of `@Id` and `@GeneratedValue` to configure SDN to use Neo4j’s internal id. We also provide generators for UUIDs.
+	@Id 
+	private final String title;
+
+  // `@Property`: `@Property` as a way to use a different name for the field than for the graph property.
+	@Property("tagline") 
+	private final String description;
+
+	@Relationship(type = "ACTED_IN", direction = Direction.INCOMING) 
+	private List<Roles> actorsAndRoles;
+
+  // `Relationship`: This defines a relationship to a class of type `PersonEntity` and the relationship type `ACTED_IN`
+	@Relationship(type = "DIRECTED", direction = Direction.INCOMING)
+	private List<PersonEntity> directors = new ArrayList<>();
+
+  // This is the constructor to be used by your application code
+	public MovieEntity(String title, String description) { 
+		this.title = title;
+		this.description = description;
+	}
+
+	// Getters omitted for brevity
+}
+```
 
 
 
@@ -169,7 +255,6 @@ spring:
 + [Neo4j Github Repo](https://github.com/spring-projects/spring-data-neo4j)
 + [Spring Data Neo4j Guide](https://docs.spring.io/spring-data/neo4j/docs/current/reference/html/)
 + [Neo4j Database Manager](https://neo4j.com/docs/operations-manual/4.0/)
-
 + [Graph Visualization](https://neo4j.com/developer/graph-visualization/)
 + 
 

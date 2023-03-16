@@ -34,6 +34,22 @@ docker run \
     neo4j:4.4.18-community
 ```
 
+> Chinese version: 
+>
+> ```bash
+> docker stop neo4j
+> docker rm neo4j
+> docker run \
+> 	--publish=7474:7474 \
+> 	--publish=7687:7687 \
+>   -d \
+> 	--restart=always \
+> 	--name neo4j \
+> 	neo4jchina/neo4j-chs:4.2.1
+> ```
+>
+> 
+
 + neo4j config
 
 ```bash
@@ -183,6 +199,52 @@ RETURN DISTINCT surfer
 + `surfer`: a common node
 + `()`: result
 
+### Save Image(Chinese Version)
+
+```cypher
+WITH 'http://we-yun.com/image/' AS url
+CREATE
+    (张帜:人员 {名称:"张帜", image:url+'作者/张帜.jpg'}),
+    (苏亮:人员 {名称:"苏亮", image:url+'作者/苏亮.jpg'}),
+    (赵炳:人员 {名称:"赵炳", image:url+'作者/赵炳.jpg'}),
+    (李敏:人员 {名称:"李敏", image:url+'作者/李敏.jpg'}),
+    (庞国明:人员 {名称:"庞国明", image:url+'作者/庞国明.jpg'}),
+    (胡佳辉:人员 {名称:"胡佳辉", image:url+'作者/胡佳辉.jpg'}),
+    (陈振宇:人员 {名称:"陈振宇", image:url+'作者/陈振宇.jpg'}),
+    (高兴宇:人员 {名称:"高兴宇", image:url+'作者/高兴宇.jpg'}),
+    (薛述强:人员 {名称:"薛述强", image:url+'作者/薛述强.jpg'}),
+    (董琴洁:人员 {名称:"董琴洁", image:url+'作者/董琴洁.jpg'}),
+    (中科院:大学 {名称:'中科院', image:url+'大学/中科院.jpg'}),
+    (北体大:大学 {名称:"北体大", image:url+'大学/北体大.jpg'}),
+    (国防科大:大学 {名称:'国防科大', image:url+'大学/国防科大.jpg'}),
+    (枣庄学院:大学 {名称:"枣庄学院", image:url+'大学/枣庄学院.jpg'}),
+    (西安交大:大学 {名称:"西安交大", image:url+'大学/西安交大.jpg'}),
+    (北京邮大:大学 {名称:"北京邮大", image:url+'大学/北京邮大.jpg'}),
+    (西南交大:大学 {名称:"西南交大", image:url+'大学/西南交大.jpg'}),
+    (权威指南:著作 {名称:'权威指南', image:url+'著作/著作.jpg'}),
+    (张帜)-[:毕业于]->(国防科大),
+    (苏亮)-[:毕业于]->(国防科大),
+    (赵炳)-[:毕业于]->(北京邮大),
+    (李敏)-[:毕业于]->(中科院),
+    (庞国明)-[:毕业于]->(枣庄学院),
+    (胡佳辉)-[:毕业于]->(西南交大),
+    (陈振宇)-[:毕业于]->(中科院),
+    (高兴宇)-[:毕业于]->(中科院),
+    (薛述强)-[:毕业于]->(西安交大),
+    (董琴洁)-[:毕业于]->(北体大),
+    (张帜)-[:主编]->(权威指南),
+    (苏亮)-[:副主编]->(权威指南),
+    (庞国明)-[:副主编]->(权威指南),
+    (胡佳辉)-[:副主编]->(权威指南),
+    (赵炳)-[:作者]->(权威指南),
+    (李敏)-[:作者]->(权威指南),
+    (陈振宇)-[:作者]->(权威指南),
+    (高兴宇)-[:作者]->(权威指南),
+    (薛述强)-[:作者]->(权威指南),
+    (董琴洁)-[:作者]->(权威指南)
+RETURN *;
+```
+
 
 
 # Java Driver - Spring Data Neo4j
@@ -210,9 +272,18 @@ spring:
     password: secret
 ```
 
-## Create your domain
++ Enable Neo4j Driver: To customize the package to scan, use one of the `basePackage…` attributes of the data-store-specific repository’s `@EnableJpaRepositories`-annotation.
 
-### Example Node-Entity
+```java
+@EnableJpaRepositories
+class Config { … }
+```
+
+
+
+## Create A Node
+
+> Example Node-Entity
 
 ```java
 // `@Node`: is used to mark this class as a managed entity. It also is used to configure the Neo4j label. The label defaults to the name of the class, if you’re just using plain `@Node`.
@@ -244,6 +315,91 @@ public class MovieEntity {
 }
 ```
 
+## Working with Spring Data Repositories
+
+This chapter explains the core concepts and interfaces of Spring Data repositories. It uses the configuration and code samples for the Jakarta Persistence API (JPA) module.
+
+### Core concepts
+
+#### CrudRepository
+
+The central interface in the Spring Data repository abstraction is `Repository`. The [`CrudRepository`](https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/repository/CrudRepository.html) and [`ListCrudRepository`](https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/repository/ListCrudRepository.html) interfaces provide sophisticated CRUD functionality for the entity class that is being managed.
+
+```java
+public interface CrudRepository<T, ID> extends Repository<T, ID> {
+
+  <S extends T> S save(S entity);      
+
+  Optional<T> findById(ID primaryKey); 
+
+  Iterable<T> findAll();               
+
+  long count();                        
+
+  void delete(T entity);               
+
+  boolean existsById(ID primaryKey);   
+
+  // … more functionality omitted.
+}
+```
+
+
+
+In addition to query methods, query derivation for both count and delete queries is available. The following list shows the interface definition for a derived count query:
+
+Example 15. Derived Count Query
+
+```java
+interface UserRepository extends CrudRepository<User, Long> {
+
+  long countByLastname(String lastname);
+}
+```
+
+
+
+The following listing shows the interface definition for a derived delete query:
+
+Example 16. Derived Delete Query
+
+```java
+interface UserRepository extends CrudRepository<User, Long> {
+
+  long deleteByLastname(String lastname);
+
+  List<User> removeByLastname(String lastname);
+}
+```
+
+
+
+`ListCrudRepository` offers equivalent methods, but they return `List` where the `CrudRepository` methods return an `Iterable`.
+
+#### PagingAndSortingRepository
+
+[`PagingAndSortingRepository`](https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/repository/PagingAndSortingRepository.html) abstraction that adds additional methods to ease paginated access to entities:
+
+```java
+public interface PagingAndSortingRepository<T, ID>  {
+
+  Iterable<T> findAll(Sort sort);
+
+  Page<T> findAll(Pageable pageable);
+}
+```
+
+To access the second page of `User` by a page size of 20, you could do something like the following:
+
+```java
+PagingAndSortingRepository<User, Long> repository = // … get access to a bean
+Page<User> users = repository.findAll(PageRequest.of(1, 20));
+```
+
+
+
+
+
 
 
 # Refence & Thanks
@@ -256,5 +412,9 @@ public class MovieEntity {
 + [Spring Data Neo4j Guide](https://docs.spring.io/spring-data/neo4j/docs/current/reference/html/)
 + [Neo4j Database Manager](https://neo4j.com/docs/operations-manual/4.0/)
 + [Graph Visualization](https://neo4j.com/developer/graph-visualization/)
++ [微云数聚（北京）科技有限公司-Neo4j 5.x 简体中文版指南](https://we-yun.com/doc/neo4j-chs-doc/#_%E8%8A%82%E7%82%B9%E7%9A%84%E5%9B%BE%E7%89%87%E5%B1%9E%E6%80%A7)
++ https://www.zhihu.com/question/264616413
++ https://www.google.com/search?q=java+%E6%9E%84%E5%BB%BA%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1&oq=java+%E6%9E%84%E5%BB%BA%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1&aqs=chrome..69i57j0i546l3j69i60j69i61l2.253j0j7&sourceid=chrome&ie=UTF-8
++ https://www.w3cschool.cn/neo4j/neo4j_need_for_graph_databses.html
 + 
 

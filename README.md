@@ -18,11 +18,11 @@ Neo4j & JVM compatibility
 
 ```bash
 # jvm SE 11
-docker stop neo4j
-docker rm neo4j
+docker stop neo4j-community
+docker rm neo4j-community
 NEO4J_HOME=/home_dir
 docker run \
-    --name neo4j \
+    --name neo4j-community \
     -p 7474:7474 -p 7687:7687 \
     -d \
     -v $NEO4J_HOME/neo4j/data:/data \
@@ -34,7 +34,23 @@ docker run \
     neo4j:4.4.18-community
 ```
 
-> Chinese version: 
++ neo4j config
+
+```bash
+sudo su
+NEO4J_HOME=/home/videoai/docker/neo4j
+cd $NEO4J_HOME/conf
+# support connect from any ip address
+echo 'dbms.connectors.default_listen_address=0.0.0.0' >> neo4j.conf
+# change bolt listen_address
+echo 'dbms.connector.bolt.listen_address=0.0.0.0:7687' >> neo4j.conf
+# change http listen_address
+echo 'dbms.connector.http.listen_address=0.0.0.0:7474 ' >> neo4j.conf
+cat neo4j.conf 
+docker restart neo4j-community
+```
+
+> Chinese version:
 >
 > ```bash
 > docker stop neo4j
@@ -47,23 +63,15 @@ docker run \
 > 	--name neo4j \
 > 	neo4jchina/neo4j-chs:4.2.1
 > ```
->
-> 
 
-+ neo4j config
 
-```bash
-sudo su
-cd $NEO4J_HOME/neo4j/conf
-# support connect from any ip address
-echo 'dbms.connectors.default_listen_address=0.0.0.0' >> neo4j.conf
-# change bolt listen_address
-echo 'dbms.connector.bolt.listen_address=0.0.0.0:7687' >> neo4j.conf
-# change http listen_address
-echo 'dbms.connector.http.listen_address=0.0.0.0:7474 ' >> neo4j.conf
-cat neo4j.conf 
-docker restart neo4j
-```
+#### error:
++ Neo.ClientError.Security.Unauthorized: The client is unauthorized due to authentication failure.
+
+
+
+
+
 
 ### Verifying Execution
 
@@ -264,39 +272,51 @@ For Java developers who use the Spring Framework or Spring Boot and want to take
 
 + configure your database connection
 
+Property style:
+
+```properties
+and configure your database connection:
+
+spring.neo4j.uri=bolt://localhost:7687
+spring.neo4j.authentication.username=neo4j
+spring.neo4j.authentication.password=secret
+```
+
+yaml style:
+
 ```yaml
 spring: 
   neo4j:
-    uri: bolt://server-ip:7687
-    username: neo4j
-    password: secret
-```
-
-+ Enable Neo4j Driver: To customize the package to scan, use one of the `basePackage…` attributes of the data-store-specific repository’s `@EnableJpaRepositories`-annotation.
-
-```java
-@EnableJpaRepositories
-class Config { … }
+    uri: bolt://server-ip:7688
+    authentication: 
+      username: neo4j
+      password: password
+    database: neo4j
 ```
 
 
 
 ## Create A Node
 
-> Example Node-Entity
+### Example Node-Entity
 
 ```java
+import org.springframework.data.neo4j.core.schema.Relationship.Direction;
+
 // `@Node`: is used to mark this class as a managed entity. It also is used to configure the Neo4j label. The label defaults to the name of the class, if you’re just using plain `@Node`.
 @Node("Movie") 
 public class MovieEntity {
 
-  // `@Id`: Each entity has to have an id. The movie class shown here uses the attribute `title` as a unique business key. If you don’t have such a unique key, you can use the combination of `@Id` and `@GeneratedValue` to configure SDN to use Neo4j’s internal id. We also provide generators for UUIDs.
+  // `@Id`: Each entity has to have an id
+  // If you don’t have such a unique key, you can use the combination of `@Id` and `@GeneratedValue` to configure SDN to use Neo4j’s internal id. On an attribute of type long or Long, @Id can be used with @GeneratedValue
+  // We also provide generators for UUIDs.
 	@Id 
-	private final String title;
+  @GeneratedValue
+	private Long id;
 
   // `@Property`: `@Property` as a way to use a different name for the field than for the graph property.
 	@Property("tagline") 
-	private final String description;
+	private String description;
 
 	@Relationship(type = "ACTED_IN", direction = Direction.INCOMING) 
 	private List<Roles> actorsAndRoles;
@@ -314,6 +334,39 @@ public class MovieEntity {
 	// Getters omitted for brevity
 }
 ```
+
+
+
+### Map relationship properties
+
+Neo4j supports defining properties not only on nodes but also on relationships. To express those properties in the model SDN provides `@RelationshipProperties` to be applied on a simple Java class. Within the properties class there have to be exactly one field marked as `@TargetNode` to define the entity the relationship points towards. Or, in an `INCOMING` relationship context, is coming from.
+
+A relationship property class and its usage may look like this:
+
+```java
+@RelationshipProperties
+public class Roles {
+
+	@RelationshipId
+	private Long id;
+
+	private final List<String> roles;
+
+	@TargetNode
+	private final PersonEntity person;
+
+	public Roles(PersonEntity person, List<String> roles) {
+		this.person = person;
+		this.roles = roles;
+	}
+
+	public List<String> getRoles() {
+		return roles;
+	}
+}
+```
+
+
 
 ## Working with Spring Data Repositories
 
@@ -396,9 +449,19 @@ PagingAndSortingRepository<User, Long> repository = // … get access to a bean
 Page<User> users = repository.findAll(PageRequest.of(1, 20));
 ```
 
+## From Spring Data commons
 
+- `@org.springframework.data.annotation.Id` same as `@Id` from SDN, in fact, `@Id` is annotated with Spring Data Common’s Id-annotation.
+- `@CreatedBy`: Applied at the field level to indicate the creator of a node.
+- `@CreatedDate`: Applied at the field level to indicate the creation date of a node.
+- `@LastModifiedBy`: Applied at the field level to indicate the author of the last change to a node.
+- `@LastModifiedDate`: Applied at the field level to indicate the last modification date of a node.
+- `@PersistenceCreator`: Applied at one constructor to mark it as the preferred constructor when reading entities.
+- `@Persistent`: Applied at the class level to indicate this class is a candidate for mapping to the database.
+- `@Version`: Applied at field level it is used for optimistic locking and checked for modification on save operations. The initial value is zero which is bumped automatically on every update.
+- `@ReadOnlyProperty`: Applied at field level to mark a property as read only. The property will be hydrated during database reads, but not be subject to writes. When used on relationships be aware that no related entity in that collection will be persisted if not related otherwise.
 
-
+Have a look at [Chapter 13](https://docs.spring.io/spring-data/neo4j/docs/current/reference/html/#auditing) for all annotations regarding auditing support.
 
 
 
@@ -416,5 +479,5 @@ Page<User> users = repository.findAll(PageRequest.of(1, 20));
 + https://www.zhihu.com/question/264616413
 + https://www.google.com/search?q=java+%E6%9E%84%E5%BB%BA%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1&oq=java+%E6%9E%84%E5%BB%BA%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1&aqs=chrome..69i57j0i546l3j69i60j69i61l2.253j0j7&sourceid=chrome&ie=UTF-8
 + https://www.w3cschool.cn/neo4j/neo4j_need_for_graph_databses.html
-+ 
++ [Neo4j数据库知识图谱查询关联人物关系和cypher查询](https://blog.csdn.net/for_yayun/article/details/109811935)
 

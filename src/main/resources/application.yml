@@ -5,10 +5,10 @@ server:
   # Tomcat启动初始化的线程数，默认值25
   min-spare-threads: 30
   #服务器的HTTP端口，默认为8080
-  port: 8000
+  port: 8080
   servlet:
     #应用的访问路径
-    context-path: /url-shortcut
+    context-path: 
   tomcat:
     #tomcat的URI编码
     uri-encoding: UTF-8

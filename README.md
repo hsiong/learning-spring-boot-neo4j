@@ -480,4 +480,5 @@ Have a look at [Chapter 13](https://docs.spring.io/spring-data/neo4j/docs/curren
 + https://www.google.com/search?q=java+%E6%9E%84%E5%BB%BA%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1&oq=java+%E6%9E%84%E5%BB%BA%E7%9F%A5%E8%AF%86%E5%9B%BE%E8%B0%B1&aqs=chrome..69i57j0i546l3j69i60j69i61l2.253j0j7&sourceid=chrome&ie=UTF-8
 + https://www.w3cschool.cn/neo4j/neo4j_need_for_graph_databses.html
 + [Neo4j数据库知识图谱查询关联人物关系和cypher查询](https://blog.csdn.net/for_yayun/article/details/109811935)
-
++ [如何在neo4j图数据库中展示全部节点信息](https://blog.csdn.net/qq_38563206/article/details/123101231)
++ [neo4j FUZZY MATCH](https://neo4j.com/docs/cypher-manual/current/clauses/where/)

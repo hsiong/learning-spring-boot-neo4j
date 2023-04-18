@@ -40,4 +40,22 @@ MATCH (n:Person)
 WHERE n.name =~ 'Tim.*'
 RETURN n.name, n.age
 
-## group by
+## with match different relationship
+MATCH (i:InstitutionEntity)-[:liked]-(p:PersonEntity)-[:liked2]-(n:NeoImageEntity)-[:liked3]-(v:ViolationEntity) 
+WITH p,n,v,i MATCH (n:NeoImageEntity)-[:liked4]-(o:OriNeoImageEntity)
+RETURN p,n,v,i,o
+LIMIT 20
+
+## There are two PersonEntities in this situation, but why can i only query one PersonEntity with `MATCH (i:InstitutionEntity)-[:liked]-(p:PersonEntity)-[:liked2]-(n:NeoImageEntity)-[:liked3]-(v:ViolationEntity) 
+                                                                                                   WITH p,n,v,i MATCH (n:NeoImageEntity)-[:liked4]-(o:OriNeoImageEntity)
+                                                                                                   RETURN p,n,v,i,o
+                                                                                                   LIMIT 20`
+## Beause you don't use `order by`, if you do not use `order by`, neo4j will sort randomly before return `limit` result
+## https://blog.csdn.net/u010801439/article/details/77568531
+MATCH (i:InstitutionEntity)-[:liked]-(p:PersonEntity)-[:liked2]-(n:NeoImageEntity)-[:liked3]-(v:ViolationEntity) 
+WITH p,n,v,i MATCH (n:NeoImageEntity)-[:liked4]-(o:OriNeoImageEntity)
+RETURN p,n,v,i,o
+ORDER BY n.image DESC
+LIMIT 20 
+
+## group by 

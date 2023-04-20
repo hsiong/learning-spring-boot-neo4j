@@ -59,3 +59,11 @@ ORDER BY n.image DESC
 LIMIT 20 
 
 ## group by 
+START player = node:players('name:*')
+MATCH player-[:sent_off_in]-game-[:in_month]-month
+RETURN COUNT(player.name) AS numberOfReds, month.name
+ORDER BY numberOfReds DESC
+
+MATCH (ee:NeoImageEntity)-[:test]-(v:ViolationEntity) 
+ RETURN v.name, count(ee)
+ ORDER BY v.name
